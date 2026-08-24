@@ -348,10 +348,20 @@ export default function ChatPage() {
                       e.stopPropagation();
                       setSessionToDelete(s.id);
                     }}
-                    style={{ color: '#94a3b8', padding: '3px', display: 'flex', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer' }}
-                    title="Delete session"
+                    style={{
+                      color: '#ef4444',
+                      background: 'rgba(254, 242, 242, 0.9)',
+                      border: '1px solid #fecaca',
+                      borderRadius: '6px',
+                      padding: '4px 6px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      cursor: 'pointer',
+                      flexShrink: 0
+                    }}
+                    title="Delete conversation"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={13} />
                   </button>
                 </div>
               );
@@ -367,29 +377,44 @@ export default function ChatPage() {
         
         {/* Mobile Action Bar (Always visible on mobile) */}
         <div className="rag-mobile-topbar">
-          <button
-            onClick={() => setShowMobileSessions(true)}
-            className="btn btn-glass btn-sm"
-            style={{ fontSize: '0.78rem', padding: '0.35rem 0.65rem' }}
-          >
-            <History size={14} /> Chats ({sessions.length})
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <button
+              onClick={() => setShowMobileSessions(true)}
+              className="btn btn-glass btn-sm"
+              style={{ fontSize: '0.78rem', padding: '0.35rem 0.65rem', fontWeight: 600 }}
+            >
+              <History size={14} /> Chats ({sessions.length})
+            </button>
 
-          <button
-            onClick={() => setShowDocFilter(!showDocFilter)}
-            className="btn btn-glass btn-sm"
-            style={{ fontSize: '0.78rem', padding: '0.35rem 0.65rem', color: selectedDocIds.length > 0 ? '#2563eb' : 'inherit' }}
-          >
-            <Filter size={13} /> {selectedDocIds.length === 0 ? 'All PDFs' : `${selectedDocIds.length} PDFs`}
-          </button>
-          
-          <button
-            onClick={handleNewChat}
-            className="btn btn-primary btn-sm"
-            style={{ fontSize: '0.78rem', padding: '0.35rem 0.65rem' }}
-          >
-            <PlusCircle size={13} /> New
-          </button>
+            <button
+              onClick={() => setShowDocFilter(!showDocFilter)}
+              className="btn btn-glass btn-sm"
+              style={{ fontSize: '0.78rem', padding: '0.35rem 0.65rem', color: selectedDocIds.length > 0 ? '#2563eb' : 'inherit', fontWeight: 600 }}
+            >
+              <Filter size={13} /> {selectedDocIds.length === 0 ? 'All PDFs' : `${selectedDocIds.length} PDFs`}
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            {currentSessionId && (
+              <button
+                onClick={() => setSessionToDelete(currentSessionId)}
+                className="btn btn-danger btn-sm"
+                style={{ fontSize: '0.78rem', padding: '0.35rem 0.6rem', fontWeight: 700 }}
+                title="Delete this conversation"
+              >
+                <Trash2 size={13} /> Delete
+              </button>
+            )}
+
+            <button
+              onClick={handleNewChat}
+              className="btn btn-primary btn-sm"
+              style={{ fontSize: '0.78rem', padding: '0.35rem 0.65rem', fontWeight: 700 }}
+            >
+              <PlusCircle size={13} /> New
+            </button>
+          </div>
         </div>
 
         {/* Scrollable Messages Stream */}

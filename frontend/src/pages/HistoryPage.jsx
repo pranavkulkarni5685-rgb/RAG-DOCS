@@ -120,16 +120,26 @@ export default function HistoryPage() {
                 </h3>
               </div>
 
-              <div style={{ marginTop: '1.5rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+              <div style={{ marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(226, 232, 240, 0.8)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
                   {formatDate(session.updatedAt)}
                 </span>
-                <button
-                  className="btn btn-primary btn-sm"
-                  onClick={() => navigate(`/chat/${session.id}`)}
-                >
-                  Resume <ArrowRight size={14} />
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => setSessionToDelete(session)}
+                    style={{ padding: '0.4rem 0.65rem', fontSize: '0.8rem', fontWeight: 700 }}
+                  >
+                    <Trash2 size={13} /> Delete
+                  </button>
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => navigate(`/chat/${session.id}`)}
+                    style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', fontWeight: 700 }}
+                  >
+                    Resume <ArrowRight size={13} />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
