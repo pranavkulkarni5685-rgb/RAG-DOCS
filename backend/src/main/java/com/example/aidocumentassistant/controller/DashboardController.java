@@ -18,7 +18,7 @@ public class DashboardController {
 
     @GetMapping({"/api/dashboard/stats", "/dashboard/stats"})
     public ResponseEntity<ApiResponse<DashboardStatsDto>> getStats() {
-        DashboardStatsDto stats = dashboardService.getStats();
+        DashboardStatsDto stats = dashboardService.getDashboardStats();
         return ResponseEntity.ok(ApiResponse.ok("Dashboard statistics retrieved", stats));
     }
 }
