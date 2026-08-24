@@ -11,8 +11,9 @@ import {
   Sparkles, 
   Filter, 
   Check,
-  Search,
-  MessageSquare
+  MessageSquare,
+  History,
+  X
 } from 'lucide-react';
 import { chatService } from '../services/chatService';
 import { documentService } from '../services/documentService';
@@ -32,6 +33,7 @@ export default function ChatPage() {
   const [documents, setDocuments] = useState([]);
   const [selectedDocIds, setSelectedDocIds] = useState([]);
   const [showDocFilter, setShowDocFilter] = useState(false);
+  const [showMobileSessions, setShowMobileSessions] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState(null);
 
   const messagesEndRef = useRef(null);
@@ -91,10 +93,12 @@ export default function ChatPage() {
     setCurrentSessionId(null);
     setMessages([]);
     setInputQuestion('');
+    setShowMobileSessions(false);
     navigate('/chat');
   };
 
   const handleSelectSession = (id) => {
+    setShowMobileSessions(false);
     navigate(`/chat/${id}`);
   };
 
@@ -141,7 +145,7 @@ export default function ChatPage() {
       const errorMsg = {
         id: Date.now() + 1,
         role: 'ASSISTANT',
-        message: '⚠️ ' + (err.message || 'Failed to generate answer. Please ensure Gemini API key is configured in Settings.'),
+        message: '⚠️ ' + (err.message || 'Failed to generate answer. Please ensure Gemini API key is configured.'),
         sources: [],
         createdAt: new Date().toISOString(),
       };
@@ -180,31 +184,45 @@ export default function ChatPage() {
   };
 
   const samplePrompts = [
-    "Summarize the key technical skills and projects.",
+    "Summarize the key technical skills and academic projects.",
     "What are the main concepts covered in the documents?",
     "Explain the core definitions and problem-solving steps.",
     "List all certifications and educational qualifications."
   ];
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 64px)', width: '100%', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: 'calc(100vh - 62px)', width: '100%', overflow: 'hidden', position: 'relative' }}>
       
-      {/* Frosted Chat Sidebar */}
-      <div style={{
-        width: '290px',
-        background: 'rgba(255, 255, 255, 0.65)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
+      {/* Mobile Chat Sidebar Backdrop */}
+      {showMobileSessions && (
+        <div className="sidebar-backdrop" onClick={() => setShowMobileSessions(false)} />
+      )}
+
+      {/* Chat Sessions Sidebar (Drawer on mobile, inline on desktop) */}
+      <div className={`chat-sidebar ${showMobileSessions ? 'chat-sidebar-open' : ''}`} style={{
+        width: '280px',
+        background: 'rgba(255, 255, 255, 0.88)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
         borderRight: '1px solid var(--glass-border)',
         display: 'flex',
         flexDirection: 'column',
         flexShrink: 0
       }}>
-        {/* New Chat & Filter Header */}
-        <div style={{ padding: '1.2rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-          <button className="btn btn-primary" onClick={handleNewChat} style={{ width: '100%', fontSize: '0.88rem' }}>
-            <PlusCircle size={17} /> New Conversation
-          </button>
+        {/* Header Button */}
+        <div style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <button className="btn btn-primary" onClick={handleNewChat} style={{ flex: 1, fontSize: '0.86rem' }}>
+              <PlusCircle size={16} /> New Chat
+            </button>
+            <button
+              className="mobile-only-btn"
+              onClick={() => setShowMobileSessions(false)}
+              style={{ padding: '0.4rem', color: '#64748b', background: 'transparent', border: 'none', cursor: 'pointer' }}
+            >
+              <X size={18} />
+            </button>
+          </div>
 
           <button
             className="btn btn-glass btn-sm"
@@ -214,12 +232,12 @@ export default function ChatPage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              fontSize: '0.82rem',
+              fontSize: '0.8rem',
               color: selectedDocIds.length > 0 ? 'var(--accent-primary)' : 'var(--text-secondary)'
             }}
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Filter size={14} /> Filter Docs ({selectedDocIds.length === 0 ? 'All' : selectedDocIds.length})
+              <Filter size={13} /> Filter Docs ({selectedDocIds.length === 0 ? 'All' : selectedDocIds.length})
             </span>
           </button>
         </div>
@@ -227,17 +245,15 @@ export default function ChatPage() {
         {/* Filter Selection Panel */}
         {showDocFilter && (
           <div style={{
-            padding: '0.85rem',
-            background: 'rgba(248, 250, 252, 0.8)',
-            backdropFilter: 'blur(10px)',
+            padding: '0.75rem',
+            background: 'rgba(248, 250, 252, 0.9)',
             borderBottom: '1px solid var(--glass-border)',
-            maxHeight: '180px',
+            maxHeight: '160px',
             overflowY: 'auto',
-            fontSize: '0.82rem',
-            animation: 'slideUpFade 0.2s ease'
+            fontSize: '0.8rem'
           }}>
-            <div style={{ fontWeight: 700, color: '#475569', marginBottom: '0.5rem' }}>
-              Search in specific PDFs:
+            <div style={{ fontWeight: 700, color: '#475569', marginBottom: '0.4rem' }}>
+              Query specific documents:
             </div>
             {documents.length === 0 ? (
               <div style={{ color: 'var(--text-muted)' }}>No documents available</div>
@@ -252,20 +268,19 @@ export default function ChatPage() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.45rem',
-                      padding: '0.4rem 0.5rem',
+                      padding: '0.35rem 0.5rem',
                       borderRadius: '6px',
                       cursor: 'pointer',
                       background: isSelected ? 'rgba(239, 246, 255, 0.9)' : 'transparent',
                       color: isSelected ? 'var(--accent-primary)' : '#1e293b',
-                      marginBottom: '0.25rem',
-                      transition: 'var(--transition-smooth)'
+                      marginBottom: '0.2rem'
                     }}
                   >
                     <div style={{
-                      width: '15px',
-                      height: '15px',
+                      width: '14px',
+                      height: '14px',
                       border: `1px solid ${isSelected ? 'var(--accent-primary)' : '#cbd5e1'}`,
-                      borderRadius: '4px',
+                      borderRadius: '3px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -273,7 +288,7 @@ export default function ChatPage() {
                       color: '#ffffff',
                       flexShrink: 0
                     }}>
-                      {isSelected && <Check size={11} />}
+                      {isSelected && <Check size={10} />}
                     </div>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: isSelected ? 600 : 400 }}>
                       {doc.fileName}
@@ -286,12 +301,12 @@ export default function ChatPage() {
         )}
 
         {/* Sessions list */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0.65rem' }}>
-          <div style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', padding: '0.5rem 0.5rem 0.35rem 0.5rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Previous Conversations
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0.6rem' }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', padding: '0.4rem 0.5rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Previous Chats
           </div>
           {sessions.length === 0 ? (
-            <div style={{ padding: '1.2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+            <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
               No previous chats
             </div>
           ) : (
@@ -305,20 +320,19 @@ export default function ChatPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '0.65rem 0.85rem',
-                    borderRadius: '10px',
+                    padding: '0.6rem 0.75rem',
+                    borderRadius: '8px',
                     cursor: 'pointer',
-                    background: isActive ? 'rgba(255, 255, 255, 0.9)' : 'transparent',
+                    background: isActive ? 'rgba(255, 255, 255, 0.95)' : 'transparent',
                     color: isActive ? 'var(--accent-primary)' : '#1e293b',
                     fontWeight: isActive ? 700 : 400,
-                    fontSize: '0.875rem',
-                    marginBottom: '0.3rem',
-                    boxShadow: isActive ? '0 4px 12px rgba(37, 99, 235, 0.1)' : 'none',
-                    border: isActive ? '1px solid rgba(191, 219, 254, 0.8)' : '1px solid transparent',
-                    transition: 'var(--transition-smooth)'
+                    fontSize: '0.84rem',
+                    marginBottom: '0.25rem',
+                    boxShadow: isActive ? '0 2px 8px rgba(37, 99, 235, 0.1)' : 'none',
+                    border: isActive ? '1px solid rgba(191, 219, 254, 0.8)' : '1px solid transparent'
                   }}
                 >
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: '0.5rem' }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: '0.4rem' }}>
                     {s.title}
                   </span>
                   <button
@@ -326,10 +340,10 @@ export default function ChatPage() {
                       e.stopPropagation();
                       setSessionToDelete(s.id);
                     }}
-                    style={{ color: '#94a3b8', padding: '3px', display: 'flex', alignItems: 'center', borderRadius: '4px' }}
+                    style={{ color: '#94a3b8', padding: '3px', display: 'flex', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer' }}
                     title="Delete session"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={13} />
                   </button>
                 </div>
               );
@@ -338,62 +352,89 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Main Glassmorphic Chat Stream Area */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
+      {/* Main Chat Stream Area (100% full width on mobile) */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', minWidth: 0 }}>
         
+        {/* Mobile Sub-Header: Chat Controls */}
+        <div className="mobile-chat-controls" style={{
+          padding: '0.6rem 1rem',
+          background: 'rgba(255, 255, 255, 0.75)',
+          backdropFilter: 'blur(10px)',
+          borderBottom: '1px solid var(--glass-border)',
+          display: 'none',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <button
+            onClick={() => setShowMobileSessions(true)}
+            className="btn btn-glass btn-sm"
+            style={{ fontSize: '0.78rem', padding: '0.35rem 0.65rem' }}
+          >
+            <History size={14} /> Chats ({sessions.length})
+          </button>
+          
+          <button
+            onClick={handleNewChat}
+            className="btn btn-primary btn-sm"
+            style={{ fontSize: '0.78rem', padding: '0.35rem 0.65rem' }}
+          >
+            <PlusCircle size={14} /> New
+          </button>
+        </div>
+
         {/* Messages Stream */}
         <div style={{
           flex: 1,
           overflowY: 'auto',
-          padding: '2rem 1.5rem',
+          padding: '1.25rem 1rem 6rem 1rem',
           display: 'flex',
           flexDirection: 'column',
-          gap: '1.5rem'
+          gap: '1.25rem'
         }}>
           
           {messages.length === 0 ? (
             <div style={{
-              maxWidth: '680px',
+              maxWidth: '650px',
               margin: 'auto',
               textAlign: 'center',
-              padding: '2.5rem 1.5rem',
-              animation: 'slideUpFade 0.35s ease'
+              padding: '1.5rem 0.5rem',
+              animation: 'slideUpFade 0.3s ease'
             }}>
               <div style={{
-                width: '64px',
-                height: '64px',
-                borderRadius: '18px',
+                width: '56px',
+                height: '56px',
+                borderRadius: '16px',
                 background: 'var(--accent-gradient)',
                 color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                margin: '0 auto 1.5rem auto',
-                boxShadow: '0 8px 24px var(--accent-glow)'
+                margin: '0 auto 1.1rem auto',
+                boxShadow: '0 6px 20px var(--accent-glow)'
               }}>
-                <Bot size={32} />
+                <Bot size={28} />
               </div>
-              <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', marginBottom: '0.6rem' }}>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', marginBottom: '0.4rem', lineHeight: '1.25' }}>
                 Ask anything about your documents
               </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.94rem', lineHeight: '1.65', marginBottom: '2.2rem' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.55', marginBottom: '1.75rem' }}>
                 RAG retrieves verified excerpts from your uploaded PDFs and generates grounded answers using Google Gemini AI.
               </p>
 
-              {/* Sample Prompt Chips with Glassmorphic Hover */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.85rem', textAlign: 'left' }}>
+              {/* Sample Prompt Chips */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.7rem', textAlign: 'left' }}>
                 {samplePrompts.map((prompt, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSend(prompt)}
                     className="glass-card"
                     style={{
-                      padding: '1rem 1.2rem',
-                      fontSize: '0.88rem',
+                      padding: '0.85rem 1rem',
+                      fontSize: '0.84rem',
                       color: '#1e293b',
-                      lineHeight: '1.45',
+                      lineHeight: '1.4',
                       cursor: 'pointer',
-                      borderRadius: '12px'
+                      borderRadius: '10px'
                     }}
                   >
                     "{prompt}"
@@ -409,55 +450,56 @@ export default function ChatPage() {
                   key={msg.id}
                   style={{
                     display: 'flex',
-                    gap: '1rem',
-                    maxWidth: '880px',
+                    gap: '0.75rem',
+                    maxWidth: '850px',
                     width: '100%',
                     margin: '0 auto',
                     alignSelf: 'center',
                     flexDirection: isUser ? 'row-reverse' : 'row',
-                    animation: 'slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                    animation: 'slideUpFade 0.25s ease'
                   }}
                 >
                   {/* Avatar */}
                   <div style={{
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '12px',
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '10px',
                     background: isUser ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' : 'var(--accent-gradient)',
                     color: '#ffffff',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
-                    boxShadow: isUser ? '0 4px 12px rgba(15, 23, 42, 0.2)' : '0 4px 14px var(--accent-glow)'
+                    boxShadow: isUser ? '0 3px 10px rgba(15, 23, 42, 0.2)' : '0 3px 12px var(--accent-glow)'
                   }}>
-                    {isUser ? <User size={19} /> : <Bot size={19} />}
+                    {isUser ? <User size={17} /> : <Bot size={17} />}
                   </div>
 
                   {/* Message Bubble */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{
-                      background: isUser ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' : 'rgba(255, 255, 255, 0.85)',
+                      background: isUser ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' : 'rgba(255, 255, 255, 0.88)',
                       backdropFilter: 'blur(16px)',
                       WebkitBackdropFilter: 'blur(16px)',
                       color: isUser ? '#ffffff' : '#0f172a',
-                      padding: '1.15rem 1.4rem',
+                      padding: '0.95rem 1.15rem',
                       borderRadius: isUser ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
-                      boxShadow: isUser ? '0 6px 20px rgba(15, 23, 42, 0.15)' : 'var(--glass-shadow)',
+                      boxShadow: isUser ? '0 4px 14px rgba(15, 23, 42, 0.15)' : 'var(--glass-shadow)',
                       border: isUser ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid var(--glass-border)',
-                      fontSize: '0.94rem',
-                      lineHeight: '1.65'
+                      fontSize: '0.9rem',
+                      lineHeight: '1.6',
+                      wordBreak: 'break-word'
                     }}>
                       <MarkdownRenderer content={msg.message} />
                     </div>
 
                     {/* Source Citations */}
                     {!isUser && msg.sources && msg.sources.length > 0 && (
-                      <div style={{ marginTop: '0.85rem' }}>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                          <Sparkles size={13} color="var(--accent-primary)" /> Verified Sources & Citations:
+                      <div style={{ marginTop: '0.75rem' }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <Sparkles size={12} color="var(--accent-primary)" /> Verified Sources ({msg.sources.length}):
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                           {msg.sources.map((source, sIdx) => (
                             <SourceCard key={sIdx} source={source} />
                           ))}
@@ -474,42 +516,42 @@ export default function ChatPage() {
           {loading && (
             <div style={{
               display: 'flex',
-              gap: '1rem',
-              maxWidth: '880px',
+              gap: '0.75rem',
+              maxWidth: '850px',
               width: '100%',
               margin: '0 auto',
               alignSelf: 'center',
-              animation: 'slideUpFade 0.25s ease'
+              animation: 'slideUpFade 0.2s ease'
             }}>
               <div style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '12px',
+                width: '34px',
+                height: '34px',
+                borderRadius: '10px',
                 background: 'var(--accent-gradient)',
                 color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
-                boxShadow: '0 4px 14px var(--accent-glow)'
+                boxShadow: '0 3px 12px var(--accent-glow)'
               }}>
-                <Bot size={19} />
+                <Bot size={17} />
               </div>
               <div style={{
-                background: 'rgba(255, 255, 255, 0.85)',
+                background: 'rgba(255, 255, 255, 0.88)',
                 backdropFilter: 'blur(16px)',
-                padding: '0.95rem 1.4rem',
+                padding: '0.85rem 1.15rem',
                 borderRadius: '4px 16px 16px 16px',
                 border: '1px solid var(--glass-border)',
                 boxShadow: 'var(--glass-shadow)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.75rem',
-                fontSize: '0.88rem',
+                gap: '0.65rem',
+                fontSize: '0.84rem',
                 color: '#475569'
               }}>
-                <Loader2 size={18} className="spin-icon" color="var(--accent-primary)" />
-                <span>Retrieving context & generating answer with Gemini AI...</span>
+                <Loader2 size={16} className="spin-icon" color="var(--accent-primary)" />
+                <span>Searching chunks & generating answer...</span>
               </div>
             </div>
           )}
@@ -517,29 +559,32 @@ export default function ChatPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Floating Glassmorphic Input Bar */}
-        <div style={{
-          padding: '1.25rem 1.75rem',
+        {/* Floating Input Bar (Optimized for Mobile Keyboards) */}
+        <div className="chat-input-container" style={{
+          padding: '0.85rem 1rem calc(0.85rem + env(safe-area-inset-bottom, 0px)) 1rem',
           display: 'flex',
           justifyContent: 'center',
-          position: 'sticky',
+          position: 'absolute',
           bottom: 0,
-          background: 'linear-gradient(to top, rgba(240, 244, 253, 0.95) 0%, rgba(240, 244, 253, 0) 100%)',
-          backdropFilter: 'blur(6px)'
+          left: 0,
+          right: 0,
+          background: 'linear-gradient(to top, rgba(240, 244, 253, 0.98) 70%, rgba(240, 244, 253, 0) 100%)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 30
         }}>
           <div style={{
-            maxWidth: '880px',
+            maxWidth: '850px',
             width: '100%',
             position: 'relative',
             display: 'flex',
             alignItems: 'center',
-            background: 'rgba(255, 255, 255, 0.85)',
+            background: 'rgba(255, 255, 255, 0.92)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
             border: '1px solid var(--glass-border)',
-            borderRadius: '16px',
-            padding: '0.5rem 0.6rem 0.5rem 1.25rem',
-            boxShadow: '0 10px 30px rgba(31, 38, 135, 0.12)'
+            borderRadius: '14px',
+            padding: '0.4rem 0.5rem 0.4rem 1rem',
+            boxShadow: '0 8px 26px rgba(31, 38, 135, 0.12)'
           }}>
             <textarea
               ref={inputRef}
@@ -547,7 +592,7 @@ export default function ChatPage() {
               value={inputQuestion}
               onChange={(e) => setInputQuestion(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask anything about your documents... (Press Enter to send)"
+              placeholder="Ask anything about your documents..."
               disabled={loading}
               style={{
                 flex: 1,
@@ -555,11 +600,11 @@ export default function ChatPage() {
                 background: 'transparent',
                 outline: 'none',
                 resize: 'none',
-                maxHeight: '130px',
-                padding: '0.4rem 0',
+                maxHeight: '110px',
+                padding: '0.45rem 0',
                 color: '#0f172a',
-                fontSize: '0.94rem',
-                lineHeight: '1.45'
+                fontSize: '16px', // 16px prevents iOS Safari auto-zoom
+                lineHeight: '1.4'
               }}
             />
 
@@ -569,11 +614,14 @@ export default function ChatPage() {
               className="btn btn-primary"
               style={{
                 borderRadius: '10px',
-                padding: '0.6rem 1rem',
-                marginLeft: '0.65rem'
+                padding: '0.55rem 0.85rem',
+                marginLeft: '0.5rem',
+                minWidth: '40px',
+                minHeight: '40px'
               }}
+              title="Send question"
             >
-              {loading ? <Loader2 size={17} className="spin-icon" /> : <Send size={17} />}
+              {loading ? <Loader2 size={16} className="spin-icon" /> : <Send size={16} />}
             </button>
           </div>
         </div>

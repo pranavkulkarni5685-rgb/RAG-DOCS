@@ -5,10 +5,10 @@ import {
   Trash2, 
   Layers, 
   Search, 
-  CheckCircle2, 
-  AlertCircle, 
   RefreshCw,
-  Eye
+  Eye,
+  Calendar,
+  HardDrive
 } from 'lucide-react';
 import { documentService } from '../services/documentService';
 import UploadModal from '../components/UploadModal';
@@ -76,9 +76,7 @@ export default function DocumentsPage() {
     return new Date(isoString).toLocaleDateString(undefined, {
       month: 'short',
       day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: 'numeric'
     });
   };
 
@@ -88,28 +86,29 @@ export default function DocumentsPage() {
 
   return (
     <div className="page-wrapper">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-        <div>
+      {/* Header with Responsive Stacking */}
+      <div className="dashboard-header">
+        <div style={{ flex: 1, minWidth: '220px' }}>
           <h1 className="page-title">Document Management</h1>
-          <p className="page-subtitle" style={{ marginBottom: 0 }}>
-            Upload, inspect text chunks, and manage indexed PDF documents.
+          <p className="page-subtitle">
+            Upload, inspect chunks, and manage indexed PDF files.
           </p>
         </div>
         <button className="btn btn-primary" onClick={() => setIsUploadOpen(true)}>
-          <UploadCloud size={16} /> Upload New PDF
+          <UploadCloud size={17} /> Upload New PDF
         </button>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="card" style={{ padding: '0.85rem 1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, maxWidth: '400px' }}>
+      <div className="card" style={{ padding: '0.85rem 1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: '200px' }}>
           <Search size={18} color="#94a3b8" />
           <input
             type="text"
             placeholder="Search documents by name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ border: 'none', outline: 'none', width: '100%', background: 'transparent', fontSize: '0.875rem' }}
+            style={{ border: 'none', outline: 'none', width: '100%', background: 'transparent', fontSize: '0.88rem' }}
           />
         </div>
 
@@ -118,72 +117,159 @@ export default function DocumentsPage() {
         </button>
       </div>
 
-      {/* Documents Table */}
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        {loading ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading documents...</div>
-        ) : filteredDocs.length === 0 ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-            <FileText size={40} style={{ margin: '0 auto 0.5rem auto', color: '#cbd5e1' }} />
-            <p style={{ fontWeight: 500, color: '#475569' }}>
-              {searchTerm ? 'No documents matched your search.' : 'No documents uploaded yet.'}
-            </p>
+      {/* Content Area */}
+      {loading ? (
+        <div className="card" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+          Loading documents...
+        </div>
+      ) : filteredDocs.length === 0 ? (
+        <div className="card" style={{ padding: '3rem 1.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+          <FileText size={40} style={{ margin: '0 auto 0.5rem auto', color: '#cbd5e1' }} />
+          <p style={{ fontWeight: 600, color: '#475569', marginBottom: '0.35rem' }}>
+            {searchTerm ? 'No documents matched your search.' : 'No documents uploaded yet.'}
+          </p>
+          <p style={{ fontSize: '0.82rem', color: '#94a3b8', marginBottom: '1.25rem' }}>
+            Upload PDF documents to begin answering questions with verified source citations.
+          </p>
+          <button className="btn btn-primary btn-sm" onClick={() => setIsUploadOpen(true)}>
+            <UploadCloud size={15} /> Upload PDF Now
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* ========================================================= */}
+          {/* 📱 MOBILE VIEW: Rich Touch-Friendly Cards with Big DELETE */}
+          {/* ========================================================= */}
+          <div className="mobile-only-cards" style={{ display: 'none', flexDirection: 'column', gap: '0.9rem' }}>
+            {filteredDocs.map((doc) => (
+              <div key={doc.id} className="card" style={{ padding: '1.1rem', position: 'relative' }}>
+                {/* Header: Name + Status */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0 }}>
+                    <div style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '9px',
+                      background: 'rgba(37, 99, 235, 0.1)',
+                      color: '#2563eb',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      <FileText size={18} />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#0f172a', lineHeight: '1.3', wordBreak: 'break-word' }}>
+                        {doc.fileName}
+                      </div>
+                    </div>
+                  </div>
+
+                  <span className={`badge badge-${doc.status.toLowerCase()}`}>
+                    {doc.status}
+                  </span>
+                </div>
+
+                {/* Metadata Pills */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem', marginBottom: '1rem', fontSize: '0.78rem', color: '#475569' }}>
+                  <span style={{ background: 'rgba(241, 245, 249, 0.9)', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
+                    📄 {doc.pageCount} Pages
+                  </span>
+                  <span style={{ background: 'rgba(241, 245, 249, 0.9)', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
+                    🧩 {doc.chunkCount} Chunks
+                  </span>
+                  <span style={{ background: 'rgba(241, 245, 249, 0.9)', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
+                    💾 {formatFileSize(doc.fileSize)}
+                  </span>
+                  <span style={{ background: 'rgba(241, 245, 249, 0.9)', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
+                    📅 {formatDate(doc.uploadedAt)}
+                  </span>
+                </div>
+
+                {/* Action Buttons (Large, Touch-Friendly) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(226, 232, 240, 0.7)' }}>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => handleViewChunks(doc.id)}
+                    style={{ padding: '0.6rem', fontSize: '0.84rem' }}
+                  >
+                    <Eye size={15} /> View Chunks
+                  </button>
+
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => setDocToDelete(doc)}
+                    style={{ padding: '0.6rem', fontSize: '0.84rem', fontWeight: 700 }}
+                  >
+                    <Trash2 size={15} /> Delete File
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-        ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Document Name</th>
-                <th>File Size</th>
-                <th>Pages</th>
-                <th>Chunks</th>
-                <th>Status</th>
-                <th>Uploaded At</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredDocs.map((doc) => (
-                <tr key={doc.id}>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                      <FileText size={18} color="#2563eb" style={{ flexShrink: 0 }} />
-                      <span style={{ fontWeight: 600, color: '#1e293b' }}>{doc.fileName}</span>
-                    </div>
-                  </td>
-                  <td>{formatFileSize(doc.fileSize)}</td>
-                  <td>{doc.pageCount}</td>
-                  <td>{doc.chunkCount}</td>
-                  <td>
-                    <span className={`badge badge-${doc.status.toLowerCase()}`}>
-                      {doc.status}
-                    </span>
-                  </td>
-                  <td style={{ fontSize: '0.8rem', color: '#64748b' }}>{formatDate(doc.uploadedAt)}</td>
-                  <td style={{ textAlign: 'right' }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => handleViewChunks(doc.id)}
-                        title="View Extracted Chunks"
-                      >
-                        <Eye size={14} /> Chunks
-                      </button>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => setDocToDelete(doc)}
-                        title="Delete Document"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+
+          {/* ========================================================= */}
+          {/* 💻 DESKTOP VIEW: Clean Structured Data Table              */}
+          {/* ========================================================= */}
+          <div className="desktop-only-table card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="table-responsive">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Document Name</th>
+                    <th>File Size</th>
+                    <th>Pages</th>
+                    <th>Chunks</th>
+                    <th>Status</th>
+                    <th>Uploaded Date</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredDocs.map((doc) => (
+                    <tr key={doc.id}>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                          <FileText size={18} color="#2563eb" style={{ flexShrink: 0 }} />
+                          <span style={{ fontWeight: 600, color: '#1e293b' }}>{doc.fileName}</span>
+                        </div>
+                      </td>
+                      <td>{formatFileSize(doc.fileSize)}</td>
+                      <td>{doc.pageCount}</td>
+                      <td>{doc.chunkCount}</td>
+                      <td>
+                        <span className={`badge badge-${doc.status.toLowerCase()}`}>
+                          {doc.status}
+                        </span>
+                      </td>
+                      <td style={{ fontSize: '0.8rem', color: '#64748b' }}>{formatDate(doc.uploadedAt)}</td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => handleViewChunks(doc.id)}
+                            title="View Extracted Chunks"
+                          >
+                            <Eye size={14} /> Chunks
+                          </button>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => setDocToDelete(doc)}
+                            title="Delete Document"
+                          >
+                            <Trash2 size={14} /> Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Upload Modal */}
       <UploadModal
