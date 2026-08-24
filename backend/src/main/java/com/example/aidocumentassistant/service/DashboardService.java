@@ -59,4 +59,8 @@ public class DashboardService {
                 .recentDocuments(recentDocs)
                 .build();
     }
+
+    public DashboardStatsDto getStats() {
+        return getDashboardStats();
+    }
 }
