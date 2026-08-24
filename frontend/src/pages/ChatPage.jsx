@@ -13,7 +13,10 @@ import {
   Check,
   MessageSquare,
   History,
-  X
+  X,
+  BookOpen,
+  HelpCircle,
+  Award
 } from 'lucide-react';
 import { chatService } from '../services/chatService';
 import { documentService } from '../services/documentService';
@@ -145,7 +148,7 @@ export default function ChatPage() {
       const errorMsg = {
         id: Date.now() + 1,
         role: 'ASSISTANT',
-        message: '⚠️ ' + (err.message || 'Failed to generate answer. Please ensure Gemini API key is configured.'),
+        message: '⚠️ ' + (err.message || 'Failed to generate answer. Please check Gemini connection in Settings.'),
         sources: [],
         createdAt: new Date().toISOString(),
       };
@@ -184,41 +187,44 @@ export default function ChatPage() {
   };
 
   const samplePrompts = [
-    "Summarize the key technical skills and academic projects.",
-    "What are the main concepts covered in the documents?",
-    "Explain the core definitions and problem-solving steps.",
-    "List all certifications and educational qualifications."
+    { text: "Summarize key technical skills, experience, and projects.", icon: BookOpen, label: "Summary" },
+    { text: "What are the core concepts and problem-solving steps explained?", icon: HelpCircle, label: "Key Concepts" },
+    { text: "List educational qualifications, university degrees, and CGPA.", icon: Award, label: "Education" },
   ];
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 62px)', width: '100%', overflow: 'hidden', position: 'relative' }}>
+    <div className="rag-chat-container">
       
-      {/* Mobile Chat Sidebar Backdrop */}
+      {/* Mobile Backdrop for Sessions Drawer */}
       {showMobileSessions && (
         <div className="sidebar-backdrop" onClick={() => setShowMobileSessions(false)} />
       )}
 
-      {/* Chat Sessions Sidebar (Drawer on mobile, inline on desktop) */}
-      <div className={`chat-sidebar ${showMobileSessions ? 'chat-sidebar-open' : ''}`} style={{
-        width: '280px',
-        background: 'rgba(255, 255, 255, 0.88)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderRight: '1px solid var(--glass-border)',
-        display: 'flex',
-        flexDirection: 'column',
-        flexShrink: 0
-      }}>
-        {/* Header Button */}
-        <div style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      {/* ========================================================= */}
+      {/* 📁 SESSIONS SIDEBAR (Desktop column / Mobile slide drawer) */}
+      {/* ========================================================= */}
+      <aside className={`rag-sidebar ${showMobileSessions ? 'rag-sidebar-active' : ''}`}>
+        {/* Top Controls */}
+        <div style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <button className="btn btn-primary" onClick={handleNewChat} style={{ flex: 1, fontSize: '0.86rem' }}>
-              <PlusCircle size={16} /> New Chat
+            <button className="btn btn-primary" onClick={handleNewChat} style={{ flex: 1, fontSize: '0.85rem', padding: '0.55rem 0.85rem' }}>
+              <PlusCircle size={15} /> New Conversation
             </button>
+            
             <button
-              className="mobile-only-btn"
+              className="rag-mobile-close"
               onClick={() => setShowMobileSessions(false)}
-              style={{ padding: '0.4rem', color: '#64748b', background: 'transparent', border: 'none', cursor: 'pointer' }}
+              style={{
+                background: 'rgba(241, 245, 249, 0.8)',
+                border: '1px solid var(--glass-border-subtle)',
+                borderRadius: '8px',
+                padding: '0.45rem',
+                color: '#475569',
+                cursor: 'pointer',
+                display: 'none',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
             >
               <X size={18} />
             </button>
@@ -233,11 +239,12 @@ export default function ChatPage() {
               alignItems: 'center',
               justifyContent: 'space-between',
               fontSize: '0.8rem',
+              padding: '0.4rem 0.75rem',
               color: selectedDocIds.length > 0 ? 'var(--accent-primary)' : 'var(--text-secondary)'
             }}
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Filter size={13} /> Filter Docs ({selectedDocIds.length === 0 ? 'All' : selectedDocIds.length})
+              <Filter size={13} /> Filter: {selectedDocIds.length === 0 ? 'All Documents' : `${selectedDocIds.length} Selected`}
             </span>
           </button>
         </div>
@@ -246,17 +253,18 @@ export default function ChatPage() {
         {showDocFilter && (
           <div style={{
             padding: '0.75rem',
-            background: 'rgba(248, 250, 252, 0.9)',
+            background: 'rgba(248, 250, 252, 0.95)',
             borderBottom: '1px solid var(--glass-border)',
             maxHeight: '160px',
             overflowY: 'auto',
-            fontSize: '0.8rem'
+            fontSize: '0.8rem',
+            animation: 'slideUpFade 0.2s ease'
           }}>
             <div style={{ fontWeight: 700, color: '#475569', marginBottom: '0.4rem' }}>
-              Query specific documents:
+              Filter by PDF:
             </div>
             {documents.length === 0 ? (
-              <div style={{ color: 'var(--text-muted)' }}>No documents available</div>
+              <div style={{ color: 'var(--text-muted)' }}>No documents uploaded</div>
             ) : (
               documents.map((doc) => {
                 const isSelected = selectedDocIds.includes(doc.id);
@@ -271,7 +279,7 @@ export default function ChatPage() {
                       padding: '0.35rem 0.5rem',
                       borderRadius: '6px',
                       cursor: 'pointer',
-                      background: isSelected ? 'rgba(239, 246, 255, 0.9)' : 'transparent',
+                      background: isSelected ? 'rgba(239, 246, 255, 0.95)' : 'transparent',
                       color: isSelected ? 'var(--accent-primary)' : '#1e293b',
                       marginBottom: '0.2rem'
                     }}
@@ -301,13 +309,13 @@ export default function ChatPage() {
         )}
 
         {/* Sessions list */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0.6rem' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem' }}>
           <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', padding: '0.4rem 0.5rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Previous Chats
+            Previous Chats ({sessions.length})
           </div>
           {sessions.length === 0 ? (
-            <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-              No previous chats
+            <div style={{ padding: '1.2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+              No chat history yet
             </div>
           ) : (
             sessions.map((s) => {
@@ -343,28 +351,22 @@ export default function ChatPage() {
                     style={{ color: '#94a3b8', padding: '3px', display: 'flex', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer' }}
                     title="Delete session"
                   >
-                    <Trash2 size={13} />
+                    <Trash2 size={14} />
                   </button>
                 </div>
               );
             })
           )}
         </div>
-      </div>
+      </aside>
 
-      {/* Main Chat Stream Area (100% full width on mobile) */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', minWidth: 0 }}>
+      {/* ========================================================= */}
+      {/* 💬 CHAT STREAM & INPUT CONTAINER (100% full width mobile) */}
+      {/* ========================================================= */}
+      <main className="rag-main-chat">
         
-        {/* Mobile Sub-Header: Chat Controls */}
-        <div className="mobile-chat-controls" style={{
-          padding: '0.6rem 1rem',
-          background: 'rgba(255, 255, 255, 0.75)',
-          backdropFilter: 'blur(10px)',
-          borderBottom: '1px solid var(--glass-border)',
-          display: 'none',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
+        {/* Mobile Action Bar (Always visible on mobile) */}
+        <div className="rag-mobile-topbar">
           <button
             onClick={() => setShowMobileSessions(true)}
             className="btn btn-glass btn-sm"
@@ -372,74 +374,58 @@ export default function ChatPage() {
           >
             <History size={14} /> Chats ({sessions.length})
           </button>
+
+          <button
+            onClick={() => setShowDocFilter(!showDocFilter)}
+            className="btn btn-glass btn-sm"
+            style={{ fontSize: '0.78rem', padding: '0.35rem 0.65rem', color: selectedDocIds.length > 0 ? '#2563eb' : 'inherit' }}
+          >
+            <Filter size={13} /> {selectedDocIds.length === 0 ? 'All PDFs' : `${selectedDocIds.length} PDFs`}
+          </button>
           
           <button
             onClick={handleNewChat}
             className="btn btn-primary btn-sm"
             style={{ fontSize: '0.78rem', padding: '0.35rem 0.65rem' }}
           >
-            <PlusCircle size={14} /> New
+            <PlusCircle size={13} /> New
           </button>
         </div>
 
-        {/* Messages Stream */}
-        <div style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '1.25rem 1rem 6rem 1rem',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1.25rem'
-        }}>
+        {/* Scrollable Messages Stream */}
+        <div className="rag-messages-scroll">
           
           {messages.length === 0 ? (
-            <div style={{
-              maxWidth: '650px',
-              margin: 'auto',
-              textAlign: 'center',
-              padding: '1.5rem 0.5rem',
-              animation: 'slideUpFade 0.3s ease'
-            }}>
-              <div style={{
-                width: '56px',
-                height: '56px',
-                borderRadius: '16px',
-                background: 'var(--accent-gradient)',
-                color: '#ffffff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 1.1rem auto',
-                boxShadow: '0 6px 20px var(--accent-glow)'
-              }}>
+            <div className="rag-empty-state">
+              <div className="rag-empty-icon">
                 <Bot size={28} />
               </div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', marginBottom: '0.4rem', lineHeight: '1.25' }}>
-                Ask anything about your documents
+              <h2 className="rag-empty-title">
+                RAG Document Assistant
               </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.55', marginBottom: '1.75rem' }}>
-                RAG retrieves verified excerpts from your uploaded PDFs and generates grounded answers using Google Gemini AI.
+              <p className="rag-empty-subtitle">
+                Ask questions to retrieve verified answers and exact page citations from your uploaded PDFs.
               </p>
 
               {/* Sample Prompt Chips */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.7rem', textAlign: 'left' }}>
-                {samplePrompts.map((prompt, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleSend(prompt)}
-                    className="glass-card"
-                    style={{
-                      padding: '0.85rem 1rem',
-                      fontSize: '0.84rem',
-                      color: '#1e293b',
-                      lineHeight: '1.4',
-                      cursor: 'pointer',
-                      borderRadius: '10px'
-                    }}
-                  >
-                    "{prompt}"
-                  </button>
-                ))}
+              <div className="rag-prompts-grid">
+                {samplePrompts.map((p, idx) => {
+                  const Icon = p.icon;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => handleSend(p.text)}
+                      className="glass-card rag-prompt-chip"
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', color: 'var(--accent-primary)', fontWeight: 700, fontSize: '0.8rem' }}>
+                        <Icon size={14} /> {p.label}
+                      </div>
+                      <div style={{ color: '#334155', fontSize: '0.82rem', lineHeight: '1.35' }}>
+                        "{p.text}"
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ) : (
@@ -448,58 +434,26 @@ export default function ChatPage() {
               return (
                 <div
                   key={msg.id}
-                  style={{
-                    display: 'flex',
-                    gap: '0.75rem',
-                    maxWidth: '850px',
-                    width: '100%',
-                    margin: '0 auto',
-                    alignSelf: 'center',
-                    flexDirection: isUser ? 'row-reverse' : 'row',
-                    animation: 'slideUpFade 0.25s ease'
-                  }}
+                  className={`rag-msg-row ${isUser ? 'rag-msg-user' : 'rag-msg-ai'}`}
                 >
                   {/* Avatar */}
-                  <div style={{
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: '10px',
-                    background: isUser ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' : 'var(--accent-gradient)',
-                    color: '#ffffff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    boxShadow: isUser ? '0 3px 10px rgba(15, 23, 42, 0.2)' : '0 3px 12px var(--accent-glow)'
-                  }}>
-                    {isUser ? <User size={17} /> : <Bot size={17} />}
+                  <div className={`rag-msg-avatar ${isUser ? 'rag-avatar-user' : 'rag-avatar-ai'}`}>
+                    {isUser ? <User size={16} /> : <Bot size={16} />}
                   </div>
 
                   {/* Message Bubble */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      background: isUser ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' : 'rgba(255, 255, 255, 0.88)',
-                      backdropFilter: 'blur(16px)',
-                      WebkitBackdropFilter: 'blur(16px)',
-                      color: isUser ? '#ffffff' : '#0f172a',
-                      padding: '0.95rem 1.15rem',
-                      borderRadius: isUser ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
-                      boxShadow: isUser ? '0 4px 14px rgba(15, 23, 42, 0.15)' : 'var(--glass-shadow)',
-                      border: isUser ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid var(--glass-border)',
-                      fontSize: '0.9rem',
-                      lineHeight: '1.6',
-                      wordBreak: 'break-word'
-                    }}>
+                    <div className={`rag-msg-bubble ${isUser ? 'rag-bubble-user' : 'rag-bubble-ai'}`}>
                       <MarkdownRenderer content={msg.message} />
                     </div>
 
                     {/* Source Citations */}
                     {!isUser && msg.sources && msg.sources.length > 0 && (
-                      <div style={{ marginTop: '0.75rem' }}>
-                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <div style={{ marginTop: '0.65rem' }}>
+                        <div style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                           <Sparkles size={12} color="var(--accent-primary)" /> Verified Sources ({msg.sources.length}):
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                           {msg.sources.map((source, sIdx) => (
                             <SourceCard key={sIdx} source={source} />
                           ))}
@@ -514,44 +468,13 @@ export default function ChatPage() {
 
           {/* Typing Indicator */}
           {loading && (
-            <div style={{
-              display: 'flex',
-              gap: '0.75rem',
-              maxWidth: '850px',
-              width: '100%',
-              margin: '0 auto',
-              alignSelf: 'center',
-              animation: 'slideUpFade 0.2s ease'
-            }}>
-              <div style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: '10px',
-                background: 'var(--accent-gradient)',
-                color: '#ffffff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                boxShadow: '0 3px 12px var(--accent-glow)'
-              }}>
-                <Bot size={17} />
+            <div className="rag-msg-row rag-msg-ai">
+              <div className="rag-msg-avatar rag-avatar-ai">
+                <Bot size={16} />
               </div>
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.88)',
-                backdropFilter: 'blur(16px)',
-                padding: '0.85rem 1.15rem',
-                borderRadius: '4px 16px 16px 16px',
-                border: '1px solid var(--glass-border)',
-                boxShadow: 'var(--glass-shadow)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.65rem',
-                fontSize: '0.84rem',
-                color: '#475569'
-              }}>
-                <Loader2 size={16} className="spin-icon" color="var(--accent-primary)" />
-                <span>Searching chunks & generating answer...</span>
+              <div className="rag-msg-bubble rag-bubble-ai" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#475569', fontSize: '0.84rem' }}>
+                <Loader2 size={15} className="spin-icon" color="var(--accent-primary)" />
+                <span>Searching PDF chunks & generating answer...</span>
               </div>
             </div>
           )}
@@ -559,33 +482,11 @@ export default function ChatPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Floating Input Bar (Optimized for Mobile Keyboards) */}
-        <div className="chat-input-container" style={{
-          padding: '0.85rem 1rem calc(0.85rem + env(safe-area-inset-bottom, 0px)) 1rem',
-          display: 'flex',
-          justifyContent: 'center',
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          background: 'linear-gradient(to top, rgba(240, 244, 253, 0.98) 70%, rgba(240, 244, 253, 0) 100%)',
-          backdropFilter: 'blur(8px)',
-          zIndex: 30
-        }}>
-          <div style={{
-            maxWidth: '850px',
-            width: '100%',
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            background: 'rgba(255, 255, 255, 0.92)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: '1px solid var(--glass-border)',
-            borderRadius: '14px',
-            padding: '0.4rem 0.5rem 0.4rem 1rem',
-            boxShadow: '0 8px 26px rgba(31, 38, 135, 0.12)'
-          }}>
+        {/* ========================================================= */}
+        {/* ⌨️ STICKY BOTTOM INPUT BAR (Never overlaps messages)      */}
+        {/* ========================================================= */}
+        <div className="rag-bottom-input-wrap">
+          <div className="rag-input-box">
             <textarea
               ref={inputRef}
               rows={1}
@@ -594,31 +495,13 @@ export default function ChatPage() {
               onKeyDown={handleKeyDown}
               placeholder="Ask anything about your documents..."
               disabled={loading}
-              style={{
-                flex: 1,
-                border: 'none',
-                background: 'transparent',
-                outline: 'none',
-                resize: 'none',
-                maxHeight: '110px',
-                padding: '0.45rem 0',
-                color: '#0f172a',
-                fontSize: '16px', // 16px prevents iOS Safari auto-zoom
-                lineHeight: '1.4'
-              }}
+              className="rag-textarea"
             />
 
             <button
               onClick={() => handleSend()}
               disabled={!inputQuestion.trim() || loading}
-              className="btn btn-primary"
-              style={{
-                borderRadius: '10px',
-                padding: '0.55rem 0.85rem',
-                marginLeft: '0.5rem',
-                minWidth: '40px',
-                minHeight: '40px'
-              }}
+              className="btn btn-primary rag-send-btn"
               title="Send question"
             >
               {loading ? <Loader2 size={16} className="spin-icon" /> : <Send size={16} />}
@@ -626,13 +509,13 @@ export default function ChatPage() {
           </div>
         </div>
 
-      </div>
+      </main>
 
       {/* Delete Confirmation Modal */}
       <ConfirmDialog
         isOpen={!!sessionToDelete}
         title="Delete Conversation"
-        message="Are you sure you want to delete this chat session? This will remove all associated messages."
+        message="Are you sure you want to delete this chat session? All messages will be permanently removed."
         onConfirm={handleDeleteSession}
         onCancel={() => setSessionToDelete(null)}
       />
