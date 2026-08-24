@@ -15,7 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/documents")
+@RequestMapping({"/api/documents", "/documents"})
 public class DocumentController {
 
     private static final Logger log = LoggerFactory.getLogger(DocumentController.class);

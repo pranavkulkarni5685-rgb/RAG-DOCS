@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/chat")
+@RequestMapping({"/api/chat", "/chat"})
 public class ChatController {
 
     private static final Logger log = LoggerFactory.getLogger(ChatController.class);

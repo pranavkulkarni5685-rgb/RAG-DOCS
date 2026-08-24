@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/settings")
+@RequestMapping({"/api/settings", "/settings"})
 public class SettingsController {
 
     private final GeminiConfig geminiConfig;
