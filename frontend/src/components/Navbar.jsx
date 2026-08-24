@@ -1,14 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, Sparkles, CheckCircle, AlertCircle, Menu } from 'lucide-react';
+import { Bot, Sparkles, Download, CheckCircle, AlertCircle, Menu } from 'lucide-react';
 import { settingsService } from '../services/settingsService';
 
 export default function Navbar({ toggleSidebar }) {
   const [health, setHealth] = useState({ connected: false, gemini: false });
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
     checkHealth();
     const interval = setInterval(checkHealth, 20000);
-    return () => clearInterval(interval);
+
+    // Listen for PWA install prompt
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Check if already installed
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+      setIsInstalled(true);
+    }
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, []);
 
   const checkHealth = async () => {
@@ -17,6 +36,16 @@ export default function Navbar({ toggleSidebar }) {
       setHealth({ connected: true, gemini: res.data?.geminiConnected || false });
     } catch {
       setHealth({ connected: false, gemini: false });
+    }
+  };
+
+  const handleInstallClick = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsInstalled(true);
+      setInstallPrompt(null);
     }
   };
 
@@ -81,6 +110,25 @@ export default function Navbar({ toggleSidebar }) {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+        {/* PWA Install Button */}
+        {installPrompt && !isInstalled && (
+          <button
+            onClick={handleInstallClick}
+            className="btn btn-glass btn-sm"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              color: '#2563eb',
+              fontWeight: 700,
+              border: '1px solid rgba(37, 99, 235, 0.3)',
+              boxShadow: '0 0 12px rgba(37, 99, 235, 0.15)'
+            }}
+          >
+            <Download size={14} /> Install App
+          </button>
+        )}
+
         <div style={{
           display: 'flex',
           alignItems: 'center',
