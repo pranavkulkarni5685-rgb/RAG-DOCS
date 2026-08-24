@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageSquare, Calendar, Trash2, ArrowRight, RefreshCw, Search } from 'lucide-react';
+import { MessageSquare, Calendar, Trash2, ArrowRight, RefreshCw, Search, PlusCircle } from 'lucide-react';
 import { chatService } from '../services/chatService';
 import ConfirmDialog from '../components/ConfirmDialog';
 
@@ -47,99 +47,104 @@ export default function HistoryPage() {
     return new Date(isoString).toLocaleDateString(undefined, {
       month: 'short',
       day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: 'numeric'
     });
   };
 
   return (
     <div className="page-wrapper">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+      {/* Header */}
+      <div className="dashboard-header">
         <div>
           <h1 className="page-title">Chat History</h1>
-          <p className="page-subtitle" style={{ marginBottom: 0 }}>
-            Review and resume previous document inquiry conversations.
+          <p className="page-subtitle">
+            Review, resume, and manage your previous document inquiry conversations.
           </p>
         </div>
-        <button className="btn btn-secondary btn-sm" onClick={loadHistory}>
-          <RefreshCw size={14} /> Refresh
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', maxWidth: '300px' }}>
+          <button className="btn btn-primary" onClick={() => navigate('/chat')} style={{ flex: 1 }}>
+            <PlusCircle size={15} /> New Chat
+          </button>
+          <button className="btn btn-secondary btn-sm" onClick={loadHistory} title="Refresh list">
+            <RefreshCw size={14} />
+          </button>
+        </div>
       </div>
 
       {/* Search Bar */}
-      <div className="card" style={{ padding: '0.85rem 1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <Search size={18} color="#94a3b8" />
+      <div className="card" style={{ padding: '0.75rem 1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <Search size={17} color="#94a3b8" />
         <input
           type="text"
-          placeholder="Search conversations by title..."
+          placeholder="Search conversations..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ border: 'none', outline: 'none', width: '100%', background: 'transparent', fontSize: '0.875rem' }}
+          style={{ border: 'none', outline: 'none', width: '100%', background: 'transparent', fontSize: '16px', color: '#0f172a' }}
         />
       </div>
 
       {/* Sessions Grid */}
       {loading ? (
-        <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading history...</div>
+        <div className="card" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+          Loading chat history...
+        </div>
       ) : filteredSessions.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+        <div className="card" style={{ textAlign: 'center', padding: '3rem 1.25rem' }}>
           <MessageSquare size={40} style={{ margin: '0 auto 0.5rem auto', color: '#cbd5e1' }} />
-          <p style={{ fontWeight: 500, color: '#475569', marginBottom: '0.25rem' }}>No conversations found</p>
-          <p style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Start a new conversation in the RAG Chat section.</p>
+          <p style={{ fontWeight: 600, color: '#475569', marginBottom: '0.25rem' }}>No conversations found</p>
+          <p style={{ fontSize: '0.82rem', color: '#94a3b8', marginBottom: '1.25rem' }}>
+            {searchTerm ? 'Try a different search keyword.' : 'Start a new conversation in the RAG Assistant.'}
+          </p>
+          <button className="btn btn-primary btn-sm" onClick={() => navigate('/chat')}>
+            Start Chatting
+          </button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
           {filteredSessions.map((session) => (
-            <div key={session.id} className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div key={session.id} className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '1.15rem' }}>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.65rem' }}>
                   <div style={{
                     width: '32px',
                     height: '32px',
-                    borderRadius: '6px',
-                    background: '#eff6ff',
+                    borderRadius: '8px',
+                    background: 'rgba(37, 99, 235, 0.1)',
                     color: 'var(--accent-primary)',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    flexShrink: 0
                   }}>
                     <MessageSquare size={16} />
                   </div>
-                  <button
-                    onClick={() => setSessionToDelete(session)}
-                    style={{ color: '#94a3b8', padding: '4px' }}
-                    title="Delete Conversation"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600 }}>
+                    📅 {formatDate(session.updatedAt)}
+                  </span>
                 </div>
 
-                <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#0f172a', marginBottom: '0.5rem', lineHeight: '1.4' }}>
+                <h3 style={{ fontSize: '0.94rem', fontWeight: 700, color: '#0f172a', lineHeight: '1.35', wordBreak: 'break-word', marginBottom: '0.5rem' }}>
                   {session.title}
                 </h3>
               </div>
 
-              <div style={{ marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(226, 232, 240, 0.8)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
-                  {formatDate(session.updatedAt)}
-                </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                  <button
-                    className="btn btn-danger btn-sm"
-                    onClick={() => setSessionToDelete(session)}
-                    style={{ padding: '0.4rem 0.65rem', fontSize: '0.8rem', fontWeight: 700 }}
-                  >
-                    <Trash2 size={13} /> Delete
-                  </button>
-                  <button
-                    className="btn btn-primary btn-sm"
-                    onClick={() => navigate(`/chat/${session.id}`)}
-                    style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', fontWeight: 700 }}
-                  >
-                    Resume <ArrowRight size={13} />
-                  </button>
-                </div>
+              {/* Action Buttons (Large Touch-Friendly) */}
+              <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(226, 232, 240, 0.7)', display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '0.55rem' }}>
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={() => setSessionToDelete(session)}
+                  style={{ padding: '0.55rem', fontSize: '0.82rem', fontWeight: 700 }}
+                  title="Delete Conversation"
+                >
+                  <Trash2 size={14} /> Delete
+                </button>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => navigate(`/chat/${session.id}`)}
+                  style={{ padding: '0.55rem', fontSize: '0.82rem', fontWeight: 700 }}
+                >
+                  Resume <ArrowRight size={14} />
+                </button>
               </div>
             </div>
           ))}
@@ -150,7 +155,7 @@ export default function HistoryPage() {
       <ConfirmDialog
         isOpen={!!sessionToDelete}
         title="Delete Conversation"
-        message={`Are you sure you want to delete "${sessionToDelete?.title}"? All chat messages will be permanently removed.`}
+        message={`Are you sure you want to delete "${sessionToDelete?.title}"? All chat messages and citations will be permanently removed.`}
         onConfirm={handleDeleteSession}
         onCancel={() => setSessionToDelete(null)}
       />
