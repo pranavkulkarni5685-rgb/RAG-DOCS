@@ -44,7 +44,6 @@ public class VectorStoreService {
             try {
                 List<Double> chunkVector = objectMapper.readValue(embeddingJson, new TypeReference<List<Double>>() {});
                 if (chunkVector.size() != queryVector.size()) {
-                    log.warn("Vector dimension mismatch: query={}, chunk={}", queryVector.size(), chunkVector.size());
                     continue;
                 }
 

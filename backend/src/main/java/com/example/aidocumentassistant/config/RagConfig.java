@@ -10,8 +10,8 @@ import org.springframework.context.annotation.Configuration;
 @Getter
 @Setter
 public class RagConfig {
-    private int chunkSize = 600;
-    private int chunkOverlap = 120;
-    private int topK = 4;
-    private double similarityThreshold = 0.35;
+    private int chunkSize = 1000;
+    private int chunkOverlap = 200;
+    private int topK = 12;
+    private double similarityThreshold = 0.25;
 }

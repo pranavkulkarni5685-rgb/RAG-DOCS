@@ -22,8 +22,8 @@ public class TextChunkerService {
 
     public List<ChunkResult> chunkPages(List<PdfExtractionService.PageContent> pages) {
         List<ChunkResult> chunks = new ArrayList<>();
-        int chunkSize = ragConfig.getChunkSize();
-        int chunkOverlap = ragConfig.getChunkOverlap();
+        int chunkSize = ragConfig.getChunkSize() > 0 ? ragConfig.getChunkSize() : 1000;
+        int chunkOverlap = ragConfig.getChunkOverlap() >= 0 ? ragConfig.getChunkOverlap() : 200;
 
         int overallChunkIndex = 0;
 
@@ -32,7 +32,7 @@ public class TextChunkerService {
             if (text == null || text.isBlank()) continue;
 
             if (text.length() <= chunkSize) {
-                // Whole page fits in one chunk
+                // Whole page fits in one high-context chunk
                 chunks.add(new ChunkResult(
                         overallChunkIndex++,
                         page.pageNumber(),
@@ -40,12 +40,12 @@ public class TextChunkerService {
                         estimateTokens(text)
                 ));
             } else {
-                // Sliding window chunking with sentence/paragraph awareness
+                // Sliding window chunking with paragraph and sentence boundary preservation
                 int start = 0;
                 while (start < text.length()) {
                     int end = Math.min(start + chunkSize, text.length());
 
-                    // If not at the end of text, try to break at a sentence boundary or word boundary
+                    // If not at the end of text, try to break at a sentence boundary or paragraph boundary
                     if (end < text.length()) {
                         int breakPoint = findBreakPoint(text, start, end);
                         if (breakPoint > start + (chunkSize / 2)) {
@@ -67,22 +67,27 @@ public class TextChunkerService {
                         break;
                     }
 
-                    // Move forward by (chunkSize - overlap)
+                    // Advance with overlap
                     start = Math.max(start + 1, end - chunkOverlap);
                 }
             }
         }
 
-        log.info("Created {} chunks from {} pages", chunks.size(), pages.size());
+        log.info("Created {} high-coherence chunks from {} pages (ChunkSize: {}, Overlap: {})",
+                chunks.size(), pages.size(), chunkSize, chunkOverlap);
         return chunks;
     }
 
     private int findBreakPoint(String text, int start, int end) {
-        // Try paragraph break
+        // 1. Try paragraph break (double newline)
         int pBreak = text.lastIndexOf("\n\n", end);
         if (pBreak > start) return pBreak + 2;
 
-        // Try sentence break (., ?, !)
+        // 2. Try single newline break
+        int nlBreak = text.lastIndexOf('\n', end);
+        if (nlBreak > start + (end - start) * 2 / 3) return nlBreak + 1;
+
+        // 3. Try sentence break (., ?, !)
         for (int i = end; i > start + (end - start) / 2; i--) {
             char c = text.charAt(i - 1);
             if ((c == '.' || c == '?' || c == '!') && (i == text.length() || Character.isWhitespace(text.charAt(i)))) {
@@ -90,7 +95,7 @@ public class TextChunkerService {
             }
         }
 
-        // Try whitespace break
+        // 4. Try whitespace break
         int spaceBreak = text.lastIndexOf(' ', end);
         if (spaceBreak > start) return spaceBreak + 1;
 
@@ -99,7 +104,6 @@ public class TextChunkerService {
 
     private int estimateTokens(String text) {
         if (text == null || text.isBlank()) return 0;
-        // Approximation: 1 token is roughly 4 characters in English
         return Math.max(1, text.length() / 4);
     }
 }
